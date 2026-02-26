@@ -228,7 +228,9 @@ func (c *Client) rotateURL() bool {
 		}
 	}
 
-	c.HorizonURL = c.AltURLs[c.currIndex]
+	newURL := c.AltURLs[c.currIndex]
+	c.HorizonURL = newURL
+	c.SorobanURL = newURL
 	httpClient := c.httpClient
 	if httpClient == nil {
 		httpClient = createHTTPClient(c.token)
@@ -240,6 +242,14 @@ func (c *Client) rotateURL() bool {
 
 	logger.Logger.Warn("RPC failover triggered", "new_url", c.HorizonURL)
 	return true
+}
+
+// attempts returns the number of retry attempts for failover loops (at least 1)
+func (c *Client) attempts() int {
+	if len(c.AltURLs) == 0 {
+		return 1
+	}
+	return len(c.AltURLs)
 }
 
 func (c *Client) getHTTPClient() *http.Client {
@@ -439,7 +449,8 @@ type GetLedgerEntriesResponse struct {
 // GetLedgerHeader fetches ledger header details for a specific sequence with automatic fallback.
 func (c *Client) GetLedgerHeader(ctx context.Context, sequence uint32) (*LedgerHeaderResponse, error) {
 	var failures []NodeFailure
-	for attempt := 0; attempt < len(c.AltURLs); attempt++ {
+	maxAttempts := c.attempts()
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		resp, err := c.getLedgerHeaderAttempt(ctx, sequence)
 		if err == nil {
 			c.markSuccess(c.HorizonURL)
@@ -450,12 +461,16 @@ func (c *Client) GetLedgerHeader(ctx context.Context, sequence uint32) (*LedgerH
 
 		failures = append(failures, NodeFailure{URL: c.HorizonURL, Reason: err})
 
-		if attempt < len(c.AltURLs)-1 {
+		if attempt < maxAttempts-1 {
 			logger.Logger.Warn("Retrying ledger header fetch with fallback RPC...", "error", err)
 			if !c.rotateURL() {
 				break
 			}
 		}
+	}
+	// Single-node path: return the typed error directly so callers can use Is/As.
+	if len(failures) == 1 {
+		return nil, failures[0].Reason
 	}
 	return nil, &AllNodesFailedError{Failures: failures}
 }
@@ -580,7 +595,8 @@ func (c *Client) GetLedgerEntries(ctx context.Context, keys []string) (map[strin
 
 	logger.Logger.Debug("Fetching ledger entries from RPC", "count", len(keysToFetch), "url", c.SorobanURL)
 	var failures []NodeFailure
-	for attempt := 0; attempt < len(c.AltURLs); attempt++ {
+	maxAttempts := c.attempts()
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		res, err := c.getLedgerEntriesAttempt(ctx, keysToFetch)
 		if err == nil {
 			c.markSuccess(c.HorizonURL)
@@ -594,7 +610,7 @@ func (c *Client) GetLedgerEntries(ctx context.Context, keys []string) (map[strin
 		c.markFailure(c.HorizonURL)
 		failures = append(failures, NodeFailure{URL: c.HorizonURL, Reason: err})
 
-		if attempt < len(c.AltURLs)-1 {
+		if attempt < maxAttempts-1 {
 			logger.Logger.Warn("Retrying with fallback Soroban RPC...", "error", err)
 			if !c.rotateURL() {
 				break
@@ -829,13 +845,14 @@ func (c *Client) simulateTransactionAttempt(ctx context.Context, envelopeXdr str
 
 // GetHealth checks the health of the Soroban RPC endpoint.
 func (c *Client) GetHealth(ctx context.Context) (*GetHealthResponse, error) {
-	for attempt := 0; attempt < len(c.AltURLs); attempt++ {
+	maxAttempts := c.attempts()
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		resp, err := c.getHealthAttempt(ctx)
 		if err == nil {
 			return resp, nil
 		}
 
-		if attempt < len(c.AltURLs)-1 {
+		if attempt < maxAttempts-1 {
 			logger.Logger.Warn("Retrying GetHealth with fallback RPC...", "error", err)
 			if !c.rotateURL() {
 				break

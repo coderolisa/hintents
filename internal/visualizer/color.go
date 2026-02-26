@@ -129,7 +129,7 @@ func Symbol(name string) string {
 	case "book":
 		return "[?]"
 	case "wave":
-		return ""
+		return "~"
 	case "magnify":
 		return "[?]"
 	case "logs":

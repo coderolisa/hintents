@@ -452,7 +452,7 @@ func (p *Parser) FindLocalVarsAt(addr uint64) ([]LocalVar, error) {
 
 	var inScope []LocalVar
 	for _, v := range subprogram.LocalVariables {
-		if addr >= uint64(v.StartLine) { 
+		if addr >= uint64(v.StartLine) {
 			inScope = append(inScope, v)
 		}
 	}
@@ -540,6 +540,7 @@ const (
 	dwOpStackValue = 0x9f // DW_OP_stack_value — value is on the expression stack
 	dwOpLit0       = 0x30 // DW_OP_lit0 — literal 0
 )
+
 func formatLocation(loc []byte) string {
 	if len(loc) == 0 {
 		return ""

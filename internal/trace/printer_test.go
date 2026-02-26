@@ -63,11 +63,12 @@ func TestPrintExecutionTrace_NoColor(t *testing.T) {
 		Operation:  "contract_call",
 		ContractID: "CONTRACT_A",
 		Function:   "init",
+		HostState:  map[string]interface{}{"cpu_instructions": cpuVal},
 	})
 	et.AddState(trace.ExecutionState{
-		Operation:  "contract_call",
-		ContractID: "CONTRACT_A",
-		Function:   "transfer",
+		Operation:   "contract_call",
+		ContractID:  "CONTRACT_A",
+		Function:    "transfer",
 		ReturnValue: "ok",
 	})
 	et.AddState(trace.ExecutionState{
@@ -76,7 +77,6 @@ func TestPrintExecutionTrace_NoColor(t *testing.T) {
 		Function:   "fail_fn",
 		Error:      "out of gas",
 	})
-	_ = cpuVal
 
 	var buf bytes.Buffer
 	trace.PrintExecutionTrace(et, trace.PrintOptions{

@@ -1,4 +1,4 @@
-// Copyright 2026 Erst Users
+// Copyright 2025 Erst Users
 // SPDX-License-Identifier: Apache-2.0
 
 package sourcemap
@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-const wasmTargetPath = "target/wasm32-unknown-unknown/release"
 
 // DiscoverLocalSymbols scans for WASM files in the local target directory.
 // It returns a map of WASM hashes to their absolute file paths.

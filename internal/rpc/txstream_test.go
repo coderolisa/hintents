@@ -83,12 +83,12 @@ func TestWsAcceptKey_KnownVector(t *testing.T) {
 
 func TestParseWSURL(t *testing.T) {
 	cases := []struct {
-		in          string
-		wantScheme  string
-		wantHost    string
-		wantPort    string
-		wantPath    string
-		wantErr     bool
+		in         string
+		wantScheme string
+		wantHost   string
+		wantPort   string
+		wantPath   string
+		wantErr    bool
 	}{
 		{
 			in:         "wss://example.com/rpc",
@@ -144,7 +144,7 @@ func TestParseWSURL(t *testing.T) {
 func TestWsFrameRoundTrip(t *testing.T) {
 	payloads := [][]byte{
 		[]byte(`{"jsonrpc":"2.0"}`),
-		[]byte(strings.Repeat("a", 200)),  // > 125 bytes triggers 2-byte length
+		[]byte(strings.Repeat("a", 200)),   // > 125 bytes triggers 2-byte length
 		[]byte(strings.Repeat("b", 70000)), // > 65535 bytes triggers 8-byte length
 	}
 
@@ -225,8 +225,8 @@ func TestPollingStreamer_StreamsFinalStatus(t *testing.T) {
 	defer srv.Close()
 
 	client := &Client{
-		SorobanURL:  srv.URL,
-		httpClient:  srv.Client(),
+		SorobanURL: srv.URL,
+		httpClient: srv.Client(),
 	}
 
 	streamer := &pollingStreamer{client: client}
